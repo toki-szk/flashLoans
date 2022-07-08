@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity >=0.6.6;
+pragma solidity =0.6.6;
 
 import "../interfaces/IUniswapV2Pair.sol";
 
@@ -29,7 +29,7 @@ library UniswapV2Library {
     ) internal pure returns (address pair) {
         (address token0, address token1) = sortTokens(tokenA, tokenB);
         pair = address(
-            bytes20(
+            uint256(
                 keccak256(
                     abi.encodePacked(
                         hex"ff",
