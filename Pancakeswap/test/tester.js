@@ -23,7 +23,6 @@ describe("FlashSwap Contract", () => {
   const WBNB = "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c";
   const BUSD = "0xe9e7cea3dedca5984780bafc599bd69add087d56";
   const CAKE = "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82";
-  const USDT = "0x55d398326f99059ff775485246999027b3197955";
   const CROX = "0x2c094f5a7d1146bb93850f629501eb749f6ed491";
 
   const BASE_TOKEN_ADRESS = BUSD;
@@ -84,6 +83,12 @@ describe("FlashSwap Contract", () => {
         ethers.utils.formatUnits(contractBalanceBUSD, DECIMALS)
       );
       console.log("Balance of BUSD : ", formattedBalanceBUSD);
+
+      const contractBalanceCROX = await FLASHSWAP.getBalanceOfToken(CROX);
+      const formattedBalanceCROX = Number(
+        ethers.utils.formatUnits(contractBalanceCROX, DECIMALS)
+      );
+      console.log("Balance of CROX : ", formattedBalanceCROX);
     });
   });
 });

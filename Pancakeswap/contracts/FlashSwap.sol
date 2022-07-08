@@ -42,14 +42,46 @@ contract PancakeFlashSwap {
         return IERC20(_address).balanceOf(address(this));
     }
 
-    
+    function placeTrade(address _fromToken, address _toToken, uint256 _amountIn
+    ) private returns (uint256) {
+        address pair = IUniswapV2Factory(PANCAKE_FACTORY).getPair(
+            _fromToken,
+            _toToken
+        );
+        require(pair != address(0), "Pool does not exist");
+
+        // Calculate Amount Out
+        address[] memory path = new address[](2);
+        path[0] = _fromToken;
+        path[1] = _toToken;
+
+        uint256 amountRequired = IUniswapV2Router01(PANCAKE_ROUTER)
+            .getAmountsOut(_amountIn, path)[1];
+
+        // console.log("amountRequired", amountRequired);
+
+        // Perform Arbitrage - Swap for another token
+        uint256 amountReceived = IUniswapV2Router01(PANCAKE_ROUTER)
+            .swapExactTokensForTokens(
+                _amountIn, // amountIn
+                amountRequired, // amountOutMin
+                path, // path
+                address(this), // address to
+                deadline // deadline
+            )[1];
+
+        // console.log("amountRecieved", amountReceived);
+
+        require(amountReceived > 0, "Aborted Tx: Trade returned zero");
+
+        return amountReceived;
+    }
 
     // Initiate arbtrage
     // begins receving loan to engage and performing arbtrage trades
     function startArbitrage(address _tokenBorrow, uint256 _amount) external {
         IERC20(BUSD).safeApprove(address(PANCAKE_ROUTER), MAX_INT);
         IERC20(CAKE).safeApprove(address(PANCAKE_ROUTER), MAX_INT);
-        IERC20(USDT).safeApprove(address(PANCAKE_ROUTER), MAX_INT);
         IERC20(CROX).safeApprove(address(PANCAKE_ROUTER), MAX_INT);
 
         // Get the Factory Pair address for combined tokens
@@ -78,17 +110,20 @@ contract PancakeFlashSwap {
         require(msg.sender == pair, "The sender needs to match the pair contract");
         require(_sender == address(this), "Sender should match this contract");
 
-        (address tokenBorrow, uint amount) = abi.decode(_data, (address, uint256));
+        
+        (address tokenBorrow, uint256 amount) = abi.decode(_data, (address, uint256));
 
         uint256 fee = ((amount * 3) / 997) + 1;
-        uint256 amountToReplay = amount + fee;
+        uint256 amountToRepay = amount + fee;
 
+        uint256 loanAmount = _amount0 > 0 ? _amount0 : _amount1;
         // アービトラージを行う
+        uint256 trade1AcquiredCoin = placeTrade(BUSD, CROX, loanAmount);
 
         // 自分に利確金支払い
 
         // ローン返済
-        IERC20(tokenBorrow).transfer(pair, amountToReplay);
+        IERC20(tokenBorrow).transfer(pair, amountToRepay);
     }
 
 }
